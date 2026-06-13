@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { toast } from "sonner";
 import { CalendarDays, ChevronLeft, ChevronRight, List } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -89,34 +89,22 @@ export function BookingsPage() {
             : undefined
         }
         action={
-          <div className="inline-flex overflow-hidden rounded-md border border-border">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "rounded-none",
-                view === "list" && " text-slate-800 hover:bg-slate-700",
-              )}
-              title="List view"
-              onClick={() => setView("list")}
-            >
-              <List className="h-4 w-4" />
-              <span className="sr-only">List view</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "rounded-none border-l border-border",
-                view === "calendar" && "bg-slate-900 text-slate-800 hover:bg-slate-700",
-              )}
-              title="Calendar view"
-              onClick={() => setView("calendar")}
-            >
-              <CalendarDays className="h-4 w-4" />
-              <span className="sr-only">Calendar view</span>
-            </Button>
-          </div>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="icon"
+            value={view}
+            onValueChange={(value) => {
+              if (value) setView(value as "list" | "calendar");
+            }}
+          >
+            <ToggleGroupItem value="list" aria-label="List view" title="List view">
+              <List />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="calendar" aria-label="Calendar view" title="Calendar view">
+              <CalendarDays />
+            </ToggleGroupItem>
+          </ToggleGroup>
         }
       />
 
