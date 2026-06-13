@@ -35,21 +35,21 @@ structure, and design decisions specific to each app.
 
 ## Tech Stack
 
-| Layer          | Technology       | Version |
-|----------------|-------------------|---------|
-| Runtime        | Node.js           | 20 LTS  |
-| Language       | TypeScript        | 5.x     |
-| API framework  | Express           | 4.x     |
-| ORM            | Prisma            | 5.x     |
-| Database       | PostgreSQL        | 15      |
-| Validation     | Zod               | 3.x     |
-| Date handling  | date-fns / date-fns-tz | 3.x |
-| Testing        | Vitest / Supertest | 2.x / 7.x |
-| Frontend       | React (Vite) + TypeScript | 18.x / 5.x |
-| UI             | Tailwind CSS + ShadCN/UI (dark) | 3.x |
-| Routing        | React Router      | 6.x     |
-| Server state   | TanStack Query    | 5.x     |
-| Forms          | react-hook-form + Zod | 7.x / 3.x |
+| Layer         | Technology                      | Version    |
+| ------------- | ------------------------------- | ---------- |
+| Runtime       | Node.js                         | 20 LTS     |
+| Language      | TypeScript                      | 5.x        |
+| API framework | Express                         | 4.x        |
+| ORM           | Prisma                          | 5.x        |
+| Database      | PostgreSQL                      | 15         |
+| Validation    | Zod                             | 3.x        |
+| Date handling | date-fns / date-fns-tz          | 3.x        |
+| Testing       | Vitest / Supertest              | 2.x / 7.x  |
+| Frontend      | React (Vite) + TypeScript       | 18.x / 5.x |
+| UI            | Tailwind CSS + ShadCN/UI (dark) | 3.x        |
+| Routing       | React Router                    | 6.x        |
+| Server state  | TanStack Query                  | 5.x        |
+| Forms         | react-hook-form + Zod           | 7.x / 3.x  |
 
 ## Prerequisites
 
@@ -147,30 +147,30 @@ pnpm seed      # seeds a demo host user, event types, availability & bookings
 
 ### Root `.env` (only needed for Docker Compose)
 
-| Key | Description | Example |
-|-----|-------------|---------|
-| `POSTGRES_USER` | Postgres username | `scheduling` |
-| `POSTGRES_PASSWORD` | Postgres password | `scheduling` |
-| `POSTGRES_DB` | Database name | `scheduling_platform` |
-| `POSTGRES_PORT` | Host port mapped to container's 5432 | `5433` |
+| Key                 | Description                          | Example               |
+| ------------------- | ------------------------------------ | --------------------- |
+| `POSTGRES_USER`     | Postgres username                    | `scheduling`          |
+| `POSTGRES_PASSWORD` | Postgres password                    | `scheduling`          |
+| `POSTGRES_DB`       | Database name                        | `scheduling_platform` |
+| `POSTGRES_PORT`     | Host port mapped to container's 5432 | `5433`                |
 
 ### `backend/.env`
 
-| Key | Description | Example |
-|-----|-------------|---------|
-| `DATABASE_URL` | Prisma connection string (pooled, used at runtime) | `postgresql://scheduling:scheduling@localhost:5433/scheduling_platform?schema=public` |
-| `DIRECT_URL` | Direct connection string (used by `prisma migrate`) | same as above for local Postgres |
-| `PORT` | API server port | `5000` |
-| `NODE_ENV` | Environment | `development` |
-| `FRONTEND_URL` | Allowed CORS origin | `http://localhost:3000` |
-| `DEFAULT_USER_ID` | Seeded host user id (single-tenant v1) | `a1b2c3d4-e5f6-7890-abcd-ef1234567890` |
+| Key               | Description                                         | Example                                                                               |
+| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `DATABASE_URL`    | Prisma connection string (pooled, used at runtime)  | `postgresql://scheduling:scheduling@localhost:5433/scheduling_platform?schema=public` |
+| `DIRECT_URL`      | Direct connection string (used by `prisma migrate`) | same as above for local Postgres                                                      |
+| `PORT`            | API server port                                     | `5000`                                                                                |
+| `NODE_ENV`        | Environment                                         | `development`                                                                         |
+| `FRONTEND_URL`    | Allowed CORS origin                                 | `http://localhost:3000`                                                               |
+| `DEFAULT_USER_ID` | Seeded host user id (single-tenant v1)              | `a1b2c3d4-e5f6-7890-abcd-ef1234567890`                                                |
 
 ### `frontend/.env`
 
-| Key | Description | Example |
-|-----|-------------|---------|
-| `VITE_API_URL` | Base URL of the backend API | `http://localhost:5000/api` |
-| `VITE_BASE_URL` | Base URL of this frontend (used to build public booking links) | `http://localhost:3000` |
+| Key             | Description                                                    | Example                     |
+| --------------- | -------------------------------------------------------------- | --------------------------- |
+| `VITE_API_URL`  | Base URL of the backend API                                    | `http://localhost:5000/api` |
+| `VITE_BASE_URL` | Base URL of this frontend (used to build public booking links) | `http://localhost:3000`     |
 
 ## API Overview
 
@@ -179,22 +179,22 @@ All responses use the envelope `{ success: true, data }` or
 middleware that attaches the single seeded host user (`DEFAULT_USER_ID`) —
 there is no login flow in v1.
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET    | `/api/health` | No | Health check |
-| GET    | `/api/me` | Yes | Current host profile (incl. `username`) |
-| GET    | `/api/event-types` | Yes | List active event types |
-| POST   | `/api/event-types` | Yes | Create event type |
-| PUT    | `/api/event-types/:id` | Yes | Update event type |
-| DELETE | `/api/event-types/:id` | Yes | Soft-delete + cancel future bookings |
-| GET    | `/api/availability` | Yes | Get default availability schedule |
-| PUT    | `/api/availability` | Yes | Replace weekly availability windows |
-| GET    | `/api/:username/:slug` | No | Public event type details + available days |
-| GET    | `/api/:username/:slug/slots?date=YYYY-MM-DD` | No | Available slots for a date |
-| POST   | `/api/bookings` | No | Create a booking |
-| GET    | `/api/bookings/:id` | No | Booking details (confirmation page) |
-| GET    | `/api/admin/bookings?filter=upcoming\|past\|range` | Yes | List bookings |
-| PATCH  | `/api/admin/bookings/:id/cancel` | Yes | Cancel an upcoming booking |
+| Method | Path                                               | Auth | Description                                |
+| ------ | -------------------------------------------------- | ---- | ------------------------------------------ |
+| GET    | `/api/health`                                      | No   | Health check                               |
+| GET    | `/api/me`                                          | Yes  | Current host profile (incl. `username`)    |
+| GET    | `/api/event-types`                                 | Yes  | List active event types                    |
+| POST   | `/api/event-types`                                 | Yes  | Create event type                          |
+| PUT    | `/api/event-types/:id`                             | Yes  | Update event type                          |
+| DELETE | `/api/event-types/:id`                             | Yes  | Soft-delete + cancel future bookings       |
+| GET    | `/api/availability`                                | Yes  | Get default availability schedule          |
+| PUT    | `/api/availability`                                | Yes  | Replace weekly availability windows        |
+| GET    | `/api/:username/:slug`                             | No   | Public event type details + available days |
+| GET    | `/api/:username/:slug/slots?date=YYYY-MM-DD`       | No   | Available slots for a date                 |
+| POST   | `/api/bookings`                                    | No   | Create a booking                           |
+| GET    | `/api/bookings/:id`                                | No   | Booking details (confirmation page)        |
+| GET    | `/api/admin/bookings?filter=upcoming\|past\|range` | Yes  | List bookings                              |
+| PATCH  | `/api/admin/bookings/:id/cancel`                   | Yes  | Cancel an upcoming booking                 |
 
 See [`backend/README.md`](backend/README.md) for request/response shapes and
 implementation notes.
@@ -218,16 +218,16 @@ database manually and configure `backend/.env.test`, then run `pnpm test` /
 
 ## Common Commands (Makefile)
 
-| Command | Description |
-|---------|-------------|
-| `make setup` | First-time setup: install deps, start Postgres, migrate, seed |
-| `make dev` | Run backend + frontend dev servers concurrently |
-| `make build` | Build both apps for production |
-| `make lint` | Type-check both apps |
-| `make db-up` / `make db-down` | Start/stop the Docker Compose Postgres container |
-| `make db-reset` | Drop the local DB volume and re-run migrate + seed |
-| `make migrate` / `make seed` | Run Prisma migrations / seed data |
-| `make test` / `make test-watch` | Run the backend test suite |
+| Command                         | Description                                                   |
+| ------------------------------- | ------------------------------------------------------------- |
+| `make setup`                    | First-time setup: install deps, start Postgres, migrate, seed |
+| `make dev`                      | Run backend + frontend dev servers concurrently               |
+| `make build`                    | Build both apps for production                                |
+| `make lint`                     | Type-check both apps                                          |
+| `make db-up` / `make db-down`   | Start/stop the Docker Compose Postgres container              |
+| `make db-reset`                 | Drop the local DB volume and re-run migrate + seed            |
+| `make migrate` / `make seed`    | Run Prisma migrations / seed data                             |
+| `make test` / `make test-watch` | Run the backend test suite                                    |
 
 Run `make help` for the full list.
 
@@ -239,10 +239,3 @@ Run `make help` for the full list.
 4. `availability_windows.start_time` / `end_time` are stored as `HH:MM` strings.
 5. Double-booking prevention relies on the DB unique constraint
    `(event_type_id, start_time)`, not application-level locking.
-
-## Known Limitations / Future Improvements
-
-- No real authentication/authorization (multi-tenant support, login, sessions).
-- No support for multiple availability schedules per user or date-specific
-  overrides (holidays, one-off blocks).
-- No rate limiting or request logging middleware.
