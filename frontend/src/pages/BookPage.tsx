@@ -34,7 +34,7 @@ export function BookPage() {
 
   if (eventLoading) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-5xl items-center p-4 sm:p-8">
+      <div className="mx-auto min-h-screen max-w-5xl p-4 pt-12 sm:p-8 sm:pt-16">
         <Skeleton className="h-64 w-full" />
       </div>
     );
@@ -49,7 +49,7 @@ export function BookPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl items-center p-4 sm:p-8">
+    <div className="mx-auto min-h-screen max-w-5xl p-4 pt-12 sm:p-8 sm:pt-16">
       <Card className="w-full">
         <CardContent className="grid grid-cols-1 gap-6 p-6 md:grid-cols-3">
           {/* Left panel: event info */}
@@ -66,6 +66,11 @@ export function BookPage() {
               selectedDate={selectedDate}
               onSelect={handleDateSelect}
               hostTimezone={eventType.hostTimezone}
+              disabledDays={(date) => {
+                const jsDay = date.getDay(); // 0=Sun … 6=Sat
+                const isoDay = jsDay === 0 ? 6 : jsDay - 1; // 0=Mon … 6=Sun
+                return !eventType.availableDays.includes(isoDay);
+              }}
             />
           </div>
 

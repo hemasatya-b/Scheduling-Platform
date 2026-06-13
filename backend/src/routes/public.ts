@@ -24,12 +24,19 @@ router.get('/:username/:slug', async (req: Request, res: Response, next: NextFun
   try {
     const eventType = await prisma.eventType.findFirst({
       where: { slug: req.params.slug, isActive: true, user: { username: req.params.username } },
-      include: { user: { select: { timezone: true } } },
+      include: { user: { select: { id: true, timezone: true } } },
     });
 
     if (!eventType) {
       throw new AppError('Resource not found', 404);
     }
+
+    const schedule = await prisma.availabilitySchedule.findFirst({
+      where: { userId: eventType.user.id, isDefault: true },
+      include: { windows: { select: { dayOfWeek: true } } },
+    });
+
+    const availableDays = schedule ? schedule.windows.map((w) => w.dayOfWeek) : [];
 
     const response: ApiResponse<unknown> = {
       success: true,
@@ -40,6 +47,7 @@ router.get('/:username/:slug', async (req: Request, res: Response, next: NextFun
         durationMinutes: eventType.durationMinutes,
         slug: eventType.slug,
         hostTimezone: eventType.user.timezone,
+        availableDays,
       },
     };
     res.json(response);

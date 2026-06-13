@@ -42,6 +42,7 @@ export interface PublicEventType {
   durationMinutes: number;
   slug: string;
   hostTimezone: string;
+  availableDays: number[]; // ISO day-of-week (0=Mon … 6=Sun) with availability configured
 }
 
 export interface CurrentUser {
