@@ -1,0 +1,115 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ──────────────────────────────────────────────────────────
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// ─── MODELS ─────────────────────────────────────────────────────────
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  username    String   @unique @db.VarChar(50)  // used in public booking URLs, e.g. /admin/30-min-consult
+  timezone    String   @default("UTC")  // IANA tz, e.g. "Asia/Kolkata"
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt       @map("updated_at")
+
+  eventTypes            EventType[]
+  availabilitySchedules AvailabilitySchedule[]
+  bookings              Booking[]
+
+  @@map("users")
+}
+
+model EventType {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  title           String   @db.VarChar(120)
+  description     String?  @db.VarChar(500)
+  durationMinutes Int      @map("duration_minutes")  // positive integer, e.g. 15, 30, 60
+  slug            String   @unique @db.VarChar(80)   // lowercase alphanumeric + hyphens
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt       @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([userId])          // filter event types by owner
+  @@index([slug])            // fast public page lookup
+  @@index([isActive])        // filter active types only
+  @@map("event_types")
+}
+
+model AvailabilitySchedule {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String   @default("Default") @db.VarChar(80)
+  timezone  String   @default("UTC")     // IANA tz string
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt       @map("updated_at")
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  windows AvailabilityWindow[]
+
+  @@index([userId])
+  @@index([userId, isDefault])  // fast default schedule lookup
+  @@map("availability_schedules")
+}
+
+model AvailabilityWindow {`
+  id         String   @id @default(uuid())
+  scheduleId String   @map("schedule_id")
+  dayOfWeek  Int      @map("day_of_week") // 0=Mon … 6=Sun (ISO)
+  startTime  String   @map("start_time")  // HH:MM in 24h, e.g. "09:00"
+  endTime    String   @map("end_time")    // HH:MM in 24h, e.g. "17:00"
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  schedule AvailabilitySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, dayOfWeek])  // one window per day per schedule
+  @@index([scheduleId])
+  @@map("availability_windows")
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  eventTypeId  String        @map("event_type_id")
+  userId       String        @map("user_id")         // the host (denormalised for fast queries)
+  bookerName   String        @map("booker_name")  @db.VarChar(120)
+  bookerEmail  String        @map("booker_email") @db.VarChar(254)
+  startTime    DateTime      @map("start_time")      // TIMESTAMPTZ — UTC stored
+  endTime      DateTime      @map("end_time")        // TIMESTAMPTZ — UTC stored
+  status       BookingStatus @default(CONFIRMED)
+  notes        String?       @db.VarChar(250)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  cancelledAt  DateTime?     @map("cancelled_at")    // null = not cancelled
+
+  eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Restrict)
+  user      User      @relation(fields: [userId],      references: [id], onDelete: Cascade)
+
+  // ═══ CRITICAL: double-booking prevention ═══
+  @@unique([eventTypeId, startTime])          // DB-level race condition guard
+
+  @@index([eventTypeId, status])              // dashboard: upcoming/past queries
+  @@index([userId, startTime])                // admin dashboard sorted by time
+  @@index([startTime])                        // slot conflict lookup by date range
+  @@index([bookerEmail])                      // future: booker self-service lookup
+  @@map("bookings")
+}
