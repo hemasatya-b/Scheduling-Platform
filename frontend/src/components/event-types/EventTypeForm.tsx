@@ -14,15 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { EVENT_DURATIONS } from '@/constants';
 import { useCreateEventType, useUpdateEventType } from '@/hooks/useEventTypes';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { EventType } from '@/types';
@@ -61,6 +53,7 @@ export function EventTypeForm({ open, onOpenChange, eventType }: EventTypeFormPr
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
     defaultValues: {
       title: '',
       description: '',
@@ -77,6 +70,7 @@ export function EventTypeForm({ open, onOpenChange, eventType }: EventTypeFormPr
         durationMinutes: eventType?.durationMinutes ?? 30,
         slug: eventType?.slug ?? '',
       });
+      form.trigger();
     }
   }, [open, eventType, form]);
 
@@ -167,24 +161,10 @@ export function EventTypeForm({ open, onOpenChange, eventType }: EventTypeFormPr
               name="durationMinutes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Duration</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(Number(value))}
-                    value={String(field.value)}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {EVENT_DURATIONS.map((duration) => (
-                        <SelectItem key={duration} value={String(duration)}>
-                          {duration} minutes
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Duration (minutes)</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={1} max={480} step={1} placeholder="e.g. 30" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -211,7 +191,7 @@ export function EventTypeForm({ open, onOpenChange, eventType }: EventTypeFormPr
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || !!form.formState.errors.durationMinutes}>
                 {isEditMode ? 'Save Changes' : 'Create Event Type'}
               </Button>
             </DialogFooter>

@@ -70,5 +70,3 @@ const FALLBACK_TIMEZONES = [
 
 export const TIMEZONES: string[] =
   typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : FALLBACK_TIMEZONES;
-
-export const EVENT_DURATIONS = [15, 30, 45, 60];

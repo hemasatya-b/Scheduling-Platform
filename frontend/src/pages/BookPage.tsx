@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -11,6 +11,28 @@ import { BookingForm } from '@/components/booking/BookingForm';
 import { usePublicEvent } from '@/hooks/usePublicEvent';
 import { useSlots } from '@/hooks/useSlots';
 
+// Maps a JS Date's getDay() (0=Sun…6=Sat) to the API's ISO day-of-week (0=Mon…6=Sun)
+function toIsoDayOfWeek(date: Date) {
+  const jsDay = date.getDay();
+  return jsDay === 0 ? 6 : jsDay - 1;
+}
+
+// Returns today if it has availability, otherwise the next day within the
+// next 7 days that does. Returns undefined if no day of the week is available.
+function getNextAvailableDate(availableDays: number[]): Date | undefined {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let offset = 0; offset < 7; offset++) {
+    const candidate = new Date(today);
+    candidate.setDate(today.getDate() + offset);
+    if (availableDays.includes(toIsoDayOfWeek(candidate))) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
 export function BookPage() {
   const { username, slug } = useParams<{ username: string; slug: string }>();
   const queryClient = useQueryClient();
@@ -18,6 +40,12 @@ export function BookPage() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
   const { data: eventType, isLoading: eventLoading, error } = usePublicEvent(username ?? '', slug ?? '');
+
+  useEffect(() => {
+    if (eventType && !selectedDate) {
+      setSelectedDate(getNextAvailableDate(eventType.availableDays));
+    }
+  }, [eventType, selectedDate]);
 
   const dateParam = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const { data: slotsData, isLoading: slotsLoading } = useSlots(username ?? '', slug ?? '', dateParam);
@@ -66,11 +94,7 @@ export function BookPage() {
               selectedDate={selectedDate}
               onSelect={handleDateSelect}
               hostTimezone={eventType.hostTimezone}
-              disabledDays={(date) => {
-                const jsDay = date.getDay(); // 0=Sun … 6=Sat
-                const isoDay = jsDay === 0 ? 6 : jsDay - 1; // 0=Mon … 6=Sun
-                return !eventType.availableDays.includes(isoDay);
-              }}
+              disabledDays={(date) => !eventType.availableDays.includes(toIsoDayOfWeek(date))}
             />
           </div>
 
