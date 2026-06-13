@@ -11,6 +11,7 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "generate": "prisma generate",
+    "postinstall": "prisma generate",
     "seed": "prisma db seed",
     "lint": "tsc --noEmit",
     "test": "vitest run",
@@ -41,6 +42,6 @@
     "vitest": "^2.1.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   }
 }
