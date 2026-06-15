@@ -98,6 +98,37 @@ describe('Public Booking API', () => {
       expect(res.body.data.slots).toHaveLength(15);
     });
 
+    it('excludes slots that overlap a CONFIRMED booking made under a different event type', async () => {
+      const consult = await seedEventType({ slug: '30-min-consult', durationMinutes: 30 });
+      const strategy = await seedEventType({
+        slug: '60-min-strategy',
+        title: '60 Min Strategy',
+        durationMinutes: 60,
+      });
+      const monday = dateStringForIsoDay(0);
+      const bookedStart = `${monday}T03:30:00.000Z`; // 60-min booking: 03:30-04:30 UTC
+
+      await prisma.booking.create({
+        data: {
+          eventTypeId: strategy.id,
+          userId: strategy.userId,
+          bookerName: 'Existing Booker',
+          bookerEmail: 'existing@example.com',
+          startTime: new Date(bookedStart),
+          endTime: new Date(new Date(bookedStart).getTime() + 60 * 60 * 1000),
+          status: 'CONFIRMED',
+        },
+      });
+
+      const res = await request(app).get(`/api/${TEST_USERNAME}/${consult.slug}/slots?date=${monday}`);
+
+      expect(res.status).toBe(200);
+      // 03:30-04:00 and 04:00-04:30 both overlap the 60-min booking; 04:30 onward is free.
+      expect(res.body.data.slots).not.toContain(`${monday}T03:30:00.000Z`);
+      expect(res.body.data.slots).not.toContain(`${monday}T04:00:00.000Z`);
+      expect(res.body.data.slots).toContain(`${monday}T04:30:00.000Z`);
+    });
+
     it('returns 400 for a malformed date', async () => {
       await seedEventType({ slug: '30-min-consult' });
 

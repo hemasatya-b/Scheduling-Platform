@@ -69,6 +69,37 @@ describe('Bookings API', () => {
       expect(second.body.error).toBe('Slot already taken');
     });
 
+    it('returns 409 when a different event type would overlap an existing booking for the host', async () => {
+      const consult = await seedEventType({ slug: '30-min-consult', durationMinutes: 30 });
+      const strategy = await seedEventType({
+        slug: '60-min-strategy',
+        title: '60 Min Strategy',
+        durationMinutes: 60,
+      });
+      const day = dateStringForIsoDay(0, 1);
+
+      const first = await request(app).post('/api/bookings').send({
+        eventTypeId: consult.id,
+        startTime: `${day}T03:30:00.000Z`, // 03:30-04:00
+        bookerName: 'Jane Doe',
+        bookerEmail: 'jane@example.com',
+      });
+      expect(first.status).toBe(201);
+
+      // 03:45-04:45 overlaps the existing 03:30-04:00 booking, even though it's
+      // a different event type and a different start time.
+      const second = await request(app).post('/api/bookings').send({
+        eventTypeId: strategy.id,
+        startTime: `${day}T03:45:00.000Z`,
+        bookerName: 'John Smith',
+        bookerEmail: 'john@example.com',
+      });
+
+      expect(second.status).toBe(409);
+      expect(second.body.success).toBe(false);
+      expect(second.body.error).toBe('Slot already taken');
+    });
+
     it('returns 404 for an unknown eventTypeId', async () => {
       const res = await request(app).post('/api/bookings').send({
         eventTypeId: '00000000-0000-0000-0000-000000000000',

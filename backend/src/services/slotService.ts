@@ -14,7 +14,9 @@ import { AppError } from '../types';
  *  4. Generate candidate slot start times every `durationMinutes`, each fully
  *     contained within the availability window, expressed in the host timezone
  *     then converted to UTC.
- *  5. Subtract any CONFIRMED/PENDING bookings already occupying those start times.
+ *  5. Subtract any candidate that overlaps a CONFIRMED/PENDING booking for any
+ *     of the host's event types (not just this one) — the host can only be in
+ *     one meeting at a time.
  */
 export async function getAvailableSlots(username: string, slug: string, dateStr: string): Promise<string[]> {
   // 1. Resolve event type + host timezone
@@ -60,20 +62,22 @@ export async function getAvailableSlots(username: string, slug: string, dateStr:
     cursor = candidateEnd;
   }
 
-  // 5. Fetch already-booked slots for this event type within the window
-  const bookedSlots = await prisma.booking.findMany({
+  // 5. Fetch the host's existing bookings (any event type) that overlap the window
+  const existingBookings = await prisma.booking.findMany({
     where: {
-      eventTypeId: eventType.id,
+      userId: eventType.user.id,
       status: { in: ['CONFIRMED', 'PENDING'] },
-      startTime: { gte: slotStart, lt: slotEnd },
+      startTime: { lt: slotEnd },
+      endTime: { gt: slotStart },
     },
-    select: { startTime: true },
+    select: { startTime: true, endTime: true },
   });
 
-  const bookedTimes = new Set(bookedSlots.map((b) => b.startTime.toISOString()));
-
-  // 6. Filter and return available slots as ISO UTC strings
+  // 6. Filter out candidates that overlap any existing booking, return as ISO UTC strings
   return candidates
-    .filter((slot) => !bookedTimes.has(slot.toISOString()))
+    .filter((slot) => {
+      const slotEndTime = addMinutes(slot, duration);
+      return !existingBookings.some((b) => slot < b.endTime && slotEndTime > b.startTime);
+    })
     .map((slot) => slot.toISOString());
 }
